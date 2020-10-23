@@ -1,82 +1,53 @@
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
-import onChange from 'on-change';
-// eslint-disable-next-line no-unused-vars
 import axios from 'axios';
 import _ from 'lodash';
-
-// const yup = !y.object ? y.default : y;
+import parsing from './parsing.js';
+import watchedState from './view.js';
+import parseFeed from './formatter.js';
 
 const schema = yup.object().shape({
   url: yup.string().url(),
 });
 
+const isDuplicate = (watchedState, url) => _.includes(watchedState.feeds.urls, url);
+
 const updateValidationState = (watchedState) => {
   try {
     schema.validateSync(watchedState.form.inputValue, { abortEarly: false });
+    if (isDuplicate(watchedState, watchedState.form.inputValue.url)) {
+      watchedState.form.isValid = false;
+      watchedState.error = 'was before';
+    }
     watchedState.form.isValid = true;
-    watchedState.form.errors = {};
+    watchedState.error = [];
   } catch (e) {
-    // renderErrors(e.inner, elements)
-    console.log(e.inner);
-    watchedState.form.errors = e.inner;
+    watchedState.error = e.errors;
     watchedState.form.isValid = false;
-    console.log(watchedState.form.errors);
   }
-};
-
-const removeClasses = (element, feedback) => {
-  element.classList.remove('is-invalid');
-  if (feedback !== null) {
-    feedback.remove();
-  }
-};
-
-const renderErrors = (errors, elements) => {
-  const feedbacks = document.querySelector('.invalid-feedback');
-  if (_.isEqual(errors, {})) {
-    removeClasses(elements.input, feedbacks);
-    return;
-  }
-  removeClasses(elements.input, feedbacks);
-  errors.forEach((error) => {
-    const text = error.errors;
-    console.log(error);
-    // console.log(path)
-    const element = elements.input;
-    const parent = element.parentElement;
-    element.classList.add('is-invalid');
-    const feedback = document.createElement('div');
-    feedback.classList.add('invalid-feedback');
-    feedback.textContent = text;
-    parent.append(feedback);
-  });
 };
 
 export default () => {
-  const state = {
-    form: {
-      isValid: true,
-      inputValue: {
-        url: '',
-      },
-      errors: {},
-    },
-  };
-
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
   };
-  const watchedState = onChange(state, (path, value) => {
-    if (path === 'form.errors') {
-      console.log('value');
-      renderErrors(value, elements);
-    }
-  });
-  elements.input.addEventListener('input', (e) => {
+
+  elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
-    watchedState.form.inputValue.url = e.target.value;
+    const formData = new FormData(e.target);
+    const feed = formData.get('url');
+    watchedState.form.inputValue.url = feed;
     updateValidationState(watchedState, schema, elements);
+
+    if (watchedState.form.isValid) {
+      watchedState.feeds.urls.push(feed);
+      const { url } = watchedState.form.inputValue;
+      // const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
+      axios.get(url)
+        .then((response) => parsing(response.data))
+        .then((data) => parseFeed(data, watchedState))
+        .catch((err) => console.log(err));
+    }
   });
 };
