@@ -1,5 +1,6 @@
 import onChange from 'on-change';
 import _ from 'lodash';
+import i18next from 'i18next';
 
 const input = document.querySelector('#add');
 const state = {
@@ -33,7 +34,7 @@ const renderErrors = (error, input) => {
     return;
   }
   removeClasses(input, feedbacks);
-  const text = error;
+  const text = error === 'feed' ? i18next.t('form.error.feed') : i18next.t('form.error.url');
   const element = input;
   const parent = element.parentElement;
   element.classList.add('is-invalid');

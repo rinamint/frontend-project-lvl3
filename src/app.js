@@ -2,9 +2,11 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import _ from 'lodash';
+import i18next from 'i18next';
 import parsing from './parsing.js';
 import watchedState from './view.js';
 import parseFeed from './formatter.js';
+import resources from './locales.js';
 
 const schema = yup.object().shape({
   url: yup.string().url(),
@@ -17,17 +19,22 @@ const updateValidationState = (watchedState) => {
     schema.validateSync(watchedState.form.inputValue, { abortEarly: false });
     if (isDuplicate(watchedState, watchedState.form.inputValue.url)) {
       watchedState.form.isValid = false;
-      watchedState.error = 'was before';
+      watchedState.error = 'feed';
     }
-    watchedState.form.isValid = true;
-    watchedState.error = [];
+    else {watchedState.form.isValid = true;
+    watchedState.error = [];}
   } catch (e) {
-    watchedState.error = e.errors;
+    watchedState.error = 'url';
     watchedState.form.isValid = false;
   }
 };
 
-export default () => {
+export default async () => {
+   await i18next.init({
+     lng: 'en',
+     debug: true,
+     resources,
+      });
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
