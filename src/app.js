@@ -7,34 +7,35 @@ import parsing from './parsing.js';
 import watchedState from './view.js';
 import parseFeed from './formatter.js';
 import resources from './locales.js';
+//import timer from './setTimeout.js';
 
 const schema = yup.object().shape({
   url: yup.string().url(),
 });
 
-const isDuplicate = (watchedState, url) => _.includes(watchedState.feeds.urls, url);
+const isDuplicate = (watcher, url) => _.includes(watcher.feeds.urls, url);
 
-const updateValidationState = (watchedState) => {
+const updateValidationState = (watcher) => {
   try {
-    schema.validateSync(watchedState.form.inputValue, { abortEarly: false });
-    if (isDuplicate(watchedState, watchedState.form.inputValue.url)) {
-      watchedState.form.isValid = false;
-      watchedState.error = 'feed';
+    schema.validateSync(watcher.form.inputValue, { abortEarly: false });
+    if (isDuplicate(watcher, watcher.form.inputValue.url)) {
+      watcher.form.isValid = false;
+      watcher.error = 'feed';
     }
-    else {watchedState.form.isValid = true;
-    watchedState.error = [];}
+    else { watcher.form.isValid = true;
+      watcher.error = [];}
   } catch (e) {
-    watchedState.error = 'url';
-    watchedState.form.isValid = false;
+    watcher.error = 'url';
+    watcher.form.isValid = false;
   }
 };
 
 export default async () => {
-   await i18next.init({
-     lng: 'en',
-     debug: true,
-     resources,
-      });
+  await i18next.init({
+    lng: 'en',
+    debug: true,
+    resources,
+  });
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
@@ -50,7 +51,7 @@ export default async () => {
     if (watchedState.form.isValid) {
       watchedState.feeds.urls.push(feed);
       const { url } = watchedState.form.inputValue;
-      // const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
+      const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
       axios.get(url)
         .then((response) => parsing(response.data))
         .then((data) => parseFeed(data, watchedState))

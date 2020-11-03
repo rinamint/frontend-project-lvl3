@@ -47,27 +47,30 @@ const renderErrors = (error, input) => {
 const watchedState = onChange(state, (path, value) => {
   const div = document.querySelector('.feeds');
   const h2 = document.createElement('h2');
+  const feed = document.createElement('div');
   if (path === 'error') {
     renderErrors(value, input);
   }
-  if (path === 'feeds.listOfFeeds' || path === 'posts') {
+  if (path === 'feeds.listOfFeeds') {
     const activeFeed = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
-    //  console.log(channelName, channelId);
+      //  console.log(channelName, channelId);
       if (channelId === state.feeds.activeId) {
         return channelName;
-      }
-      return [];
-    });
-    const p = state.posts.flatMap(({ PostId, title, link }) => {
-      if (PostId === state.feeds.activeId) {
-        return `<div><a href="${link}">${title}</a></div>`;
-      }
-      return [];
-    });
-    div.innerHTML = p.join('');
-    h2.innerHTML = activeFeed.join('');
-    div.prepend(h2);
-  }
+        }
+        return [];
+      });
+      const p = state.posts.flatMap(({ postId, title, link }) => {
+        if (postId === state.feeds.activeId) {
+          return `<div><a href="${link}">${title}</a></div>`;
+        }
+        return [];
+      });
+      console.log(p)
+      feed.innerHTML = p.join('');
+      h2.innerHTML = activeFeed.join('');
+      feed.prepend(h2)
+      div.append(feed);
+    }
 });
 
 export default watchedState;
