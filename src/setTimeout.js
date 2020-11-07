@@ -16,7 +16,9 @@ const updator = (state) => {
       const parsed = parse(re.data);
       const [feed, posts] = parseRss(parsed);
       const id = findId(feeds, feed);
-      old.forEach((oldPost) => oldPost.postId = id);
+      old.forEach((oldPost) => {
+        oldPost.postId = id;
+      });
       posts.forEach((post) => newCheck.push(post));
     }))
     .then(() => {
