@@ -4,10 +4,10 @@ import axios from 'axios';
 import _ from 'lodash';
 import i18next from 'i18next';
 import parsing from './parsing.js';
-import watchedState from './view.js';
-import parseFeed from './formatter.js';
+import view from './view.js';
+import { parseRss, parseFeed } from './formatter.js';
 import resources from './locales.js';
-//import timer from './setTimeout.js';
+import timer from './setTimeout.js';
 
 const schema = yup.object().shape({
   url: yup.string().url(),
@@ -21,9 +21,10 @@ const updateValidationState = (watcher) => {
     if (isDuplicate(watcher, watcher.form.inputValue.url)) {
       watcher.form.isValid = false;
       watcher.error = 'feed';
+    } else {
+      watcher.form.isValid = true;
+      watcher.error = [];
     }
-    else { watcher.form.isValid = true;
-      watcher.error = [];}
   } catch (e) {
     watcher.error = 'url';
     watcher.form.isValid = false;
@@ -36,26 +37,49 @@ export default async () => {
     debug: true,
     resources,
   });
+  const state = {
+    form: {
+      isValid: true,
+      inputValue: {
+        url: '',
+      },
+    },
+    error: [],
+    feeds: {
+      activeId: null,
+      listOfFeeds: [],
+      urls: [],
+    },
+    posts: [],
+  };
+  const watchedState = view(state);
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
   };
+  timer(watchedState);
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const feed = formData.get('url');
-    watchedState.form.inputValue.url = feed;
+    const link = formData.get('url');
+    watchedState.form.inputValue.url = link;
     updateValidationState(watchedState, schema, elements);
-
     if (watchedState.form.isValid) {
-      watchedState.feeds.urls.push(feed);
+      e.target.reset();
       const { url } = watchedState.form.inputValue;
       const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
-      axios.get(url)
+      axios.get(`${corsApiHost}${url}`)
         .then((response) => parsing(response.data))
-        .then((data) => parseFeed(data, watchedState))
-        .catch((err) => console.log(err));
+        .then((doc) => parseRss(doc))
+        .then((data) => {
+          watchedState.feeds.urls.push(url);
+          parseFeed(data, watchedState);
+        })
+        .catch((err) => {
+          console.log(err);
+          watchedState.error = 'network';
+        });
     }
   });
 };

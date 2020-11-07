@@ -1,19 +1,22 @@
 /* eslint-disable no-param-reassign */
 import _ from 'lodash';
 
-const parseFeed = (doc, watchedState) => {
+export const parseRss = (doc) => {
   const channelTitle = doc.querySelector('channel > title');
   const id = _.uniqueId();
-  const feed = { channelId: id, channelName: channelTitle.innerHTML };
-  watchedState.feeds.activeId = id;
-  const posts = doc.querySelectorAll('item');
-  console.log(posts);
-  posts.forEach((post) => {
+  const channel = { channelId: id, channelName: channelTitle.innerHTML };
+  const rssPosts = doc.querySelectorAll('item');
+  const arrayOfPosts = Array.from(rssPosts).map((post) => {
     const title = post.querySelector('title');
     const link = post.querySelector('link');
-    watchedState.posts.push({ postId: id, title: title.innerHTML, link: link.innerHTML });
+    return { postId: id, title: title.innerHTML, link: link.innerHTML };
   });
-  watchedState.feeds.listOfFeeds.push(feed);
+  return [channel, arrayOfPosts];
 };
 
-export default parseFeed;
+export const parseFeed = (data, watcher) => {
+  const [channel, arrayOfPosts] = data;
+  watcher.feeds.listOfFeeds.push(channel);
+  watcher.posts.push(arrayOfPosts.flat());
+  watcher.feeds.activeId = channel.channelId;
+};

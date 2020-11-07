@@ -3,74 +3,87 @@ import _ from 'lodash';
 import i18next from 'i18next';
 
 const input = document.querySelector('#add');
-const state = {
-  form: {
-    isValid: true,
-    inputValue: {
-      url: '',
-    },
-  },
-  error: [],
-  feeds: {
-    activeId: null,
-    listOfFeeds: [],
-    urls: [],
-  },
-  posts: [],
 
-};
-
-const removeClasses = (element, feedback) => {
-  element.classList.remove('is-invalid');
+const removeClasses = (element, feedback, value) => {
+  element.classList.remove(value);
   if (feedback !== null) {
     feedback.remove();
   }
 };
 
-const renderErrors = (error, input) => {
-  const feedbacks = document.querySelector('.invalid-feedback');
-  if (_.isEqual(error, [])) {
-    removeClasses(input, feedbacks);
-    return;
-  }
-  removeClasses(input, feedbacks);
-  const text = error === 'feed' ? i18next.t('form.error.feed') : i18next.t('form.error.url');
-  const element = input;
-  const parent = element.parentElement;
-  element.classList.add('is-invalid');
-  const feedback = document.createElement('div');
-  feedback.classList.add('invalid-feedback');
-  feedback.textContent = text;
-  parent.append(feedback);
+const buildText = (key, attribute) => {
+  const text = i18next.t(`${key}`);
+  const div = document.createElement('div');
+  div.classList.add(attribute);
+  div.innerHTML = text;
+  return div;
 };
 
-const watchedState = onChange(state, (path, value) => {
-  const div = document.querySelector('.feeds');
-  const h2 = document.createElement('h2');
-  const feed = document.createElement('div');
+const renderErrors = (error, element) => {
+  const invalidFeedback = document.querySelector('.invalid-feedback');
+  if (_.isEqual(error, [])) {
+    removeClasses(input, invalidFeedback, 'is-invalid');
+    return;
+  }
+  removeClasses(element, invalidFeedback, 'is-invalid');
+  let newFeedback;
+  switch (error) {
+    case 'feed':
+      newFeedback = buildText('form.error.feed', 'invalid-feedback');
+      break;
+    case 'url':
+      newFeedback = buildText('form.error.url', 'invalid-feedback');
+      break;
+    case 'network':
+      newFeedback = buildText('form.error.network', 'invalid-feedback');
+      break;
+    default:
+      newFeedback = buildText('form.error.unknown', 'invalid-feedback');
+  }
+  const parent = element.parentElement;
+  element.classList.add('is-invalid');
+  parent.append(newFeedback);
+};
+
+const feed = document.querySelector('.feeds');
+const feedHeading = document.createElement('h2');
+const postsHeading = document.createElement('h2');
+feedHeading.innerHTML = 'FEEDS';
+postsHeading.innerHTML = 'POSTS';
+const posts = document.querySelector('.posts');
+const ulFeeds = document.querySelector('.feed-list');
+const ulPosts = document.querySelector('.post-list');
+
+const watchedState = (state) => onChange(state, (path, value) => {
   if (path === 'error') {
     renderErrors(value, input);
   }
   if (path === 'feeds.listOfFeeds') {
-    const activeFeed = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
-      //  console.log(channelName, channelId);
-      if (channelId === state.feeds.activeId) {
+    const lastAdded = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
+      if (channelId > state.feeds.activeId) {
         return channelName;
-        }
-        return [];
-      });
-      const p = state.posts.flatMap(({ postId, title, link }) => {
-        if (postId === state.feeds.activeId) {
-          return `<div><a href="${link}">${title}</a></div>`;
-        }
-        return [];
-      });
-      console.log(p)
-      feed.innerHTML = p.join('');
-      h2.innerHTML = activeFeed.join('');
-      feed.prepend(h2)
-      div.append(feed);
-    }
+      }
+      return [];
+    });
+    const li = document.createElement('li');
+    li.classList.add('list-group-item');
+    console.log(lastAdded);
+    li.innerHTML = lastAdded.join('');
+    ulFeeds.prepend(li);
+    feed.append(feedHeading);
+    feed.append(ulFeeds);
+  }
+  if (path === 'posts') {
+    value.flat().forEach(({ postId, title, link }) => {
+      if (Number(postId) > Number(state.feeds.activeId)) {
+        const li = document.createElement('li');
+        li.classList.add('list-group-item');
+        li.innerHTML = `<a href="${link}">${title.split('<')}</a>`;
+        ulPosts.prepend(li);
+      }
+    });
+    posts.append(postsHeading);
+    posts.append(ulPosts);
+  }
 });
-
 export default watchedState;
