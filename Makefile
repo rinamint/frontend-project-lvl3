@@ -10,5 +10,5 @@ publish:
 lint:
 	npx eslint .
 
-w:
+webpack:
 	npx webpack

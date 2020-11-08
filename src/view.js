@@ -61,13 +61,14 @@ const watchedState = (state) => onChange(state, (path, value) => {
   if (path === 'feeds.listOfFeeds') {
     const lastAdded = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
       if (channelId > state.feeds.activeId) {
-        return channelName;
+        return channelName.split('<!');
       }
       return [];
     });
     const li = document.createElement('li');
     li.classList.add('list-group-item');
     console.log(lastAdded);
+    console.log(state)
     li.innerHTML = lastAdded.join('');
     ulFeeds.prepend(li);
     feed.append(feedHeading);
