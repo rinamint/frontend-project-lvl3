@@ -6,4 +6,4 @@
 ![Node.js CI](https://github.com/rinamint/frontend-project-lvl3/workflows/Node.js%20CI/badge.svg)
 
 __ОПУБЛИКОВАННЫЙ ПРОЕКТ:__ 
-- https://frontend-project-lvl3-p644ezq0c.vercel.app 
+- https://frontend-project-lvl3-aifhybwzc.vercel.app
