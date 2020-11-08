@@ -31,12 +31,7 @@ const updateValidationState = (watcher) => {
   }
 };
 
-export default async () => {
-  await i18next.init({
-    lng: 'en',
-    debug: true,
-    resources,
-  });
+export default () => {
   const state = {
     form: {
       isValid: true,
@@ -52,6 +47,11 @@ export default async () => {
     },
     posts: [],
   };
+  i18next.init({
+    lng: 'en',
+    debug: true,
+    resources,
+  });
   const watchedState = view(state);
   const elements = {
     form: document.querySelector('form'),
