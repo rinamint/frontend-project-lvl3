@@ -3,11 +3,11 @@ import * as yup from 'yup';
 import axios from 'axios';
 import _ from 'lodash';
 import i18next from 'i18next';
-import parsing from './parsing.js';
-import view from './view.js';
-import { parseRss, parseFeed } from './formatter.js';
-import resources from './locales.js';
-import timer from './setTimeout.js';
+import parsing from './parsing';
+import view, { formWatcher } from './view';
+import { parseRss, parseFeed } from './formatter';
+import resources from './locales';
+import timer from './setTimeout';
 
 const schema = yup.object().shape({
   url: yup.string().url(),
@@ -34,6 +34,7 @@ const updateValidationState = (watcher) => {
 export default () => {
   const state = {
     form: {
+      state: 'filling',
       isValid: true,
       inputValue: {
         url: '',
@@ -53,6 +54,7 @@ export default () => {
     resources,
   });
   const watchedState = view(state);
+  const formState = formWatcher(state);
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
@@ -64,8 +66,9 @@ export default () => {
     const formData = new FormData(e.target);
     const link = formData.get('url');
     watchedState.form.inputValue.url = link;
-    updateValidationState(watchedState, schema, elements);
+    updateValidationState(formState, schema, elements);
     if (watchedState.form.isValid) {
+      formState.form.state = 'proccesing';
       e.target.reset();
       const { url } = watchedState.form.inputValue;
       const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
@@ -75,10 +78,11 @@ export default () => {
         .then((data) => {
           watchedState.feeds.urls.push(url);
           parseFeed(data, watchedState);
+          formState.form.state = 'proccessed';
         })
-        .catch((err) => {
-          console.log(err);
-          watchedState.error = 'network';
+        .catch(() => {
+          formState.error = 'network';
+          formState.form.state = 'failed';
         });
     }
   });

@@ -1,8 +1,8 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
-import parse from './parsing.js';
-import { parseRss } from './formatter.js';
-import findId from './findId.js';
+import parse from './parsing';
+import { parseRss } from './formatter';
+import findId from './findId';
 
 const updator = (state) => {
   const { urls } = state.feeds;
@@ -32,15 +32,14 @@ const updator = (state) => {
         });
 
         if (newPost.length > 0) {
-          state.posts = [...old, ...newPost];
+          state.posts = [...newPost, ...old];
         }
       }
     })
     .then(() => {
       setTimeout(() => updator(state), 5000);
     })
-    .catch((err) => {
-      console.log(err);
+    .catch(() => {
       state.error = 'network';
     });
 };

@@ -8,6 +8,7 @@ export default {
           network: 'sorry, there is a network problem. Try again',
           unknown: 'oops, something went wrong',
         },
+        success: 'Rss has been loaded',
       },
     },
   },

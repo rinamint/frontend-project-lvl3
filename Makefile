@@ -10,5 +10,8 @@ publish:
 lint:
 	npx eslint .
 
-webpack:
+w:
 	npx webpack
+
+start:
+	npm start

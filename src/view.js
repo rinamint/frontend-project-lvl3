@@ -3,46 +3,46 @@ import _ from 'lodash';
 import i18next from 'i18next';
 
 const input = document.querySelector('#add');
+const button = document.querySelector('.btn-primary');
 
-const removeClasses = (element, feedback, value) => {
+const removeClasses = (element, feedback, value, feedbackValue) => {
   element.classList.remove(value);
   if (feedback !== null) {
-    feedback.remove();
+    feedback.classList.remove(feedbackValue);
+    feedback.innerHTML = ''
   }
 };
 
 const buildText = (key, attribute) => {
   const text = i18next.t(`${key}`);
-  const div = document.createElement('div');
+  const div = document.querySelector('.feedback');
+  div.innerHTML = ''
+  div.classList.remove('text-success');
   div.classList.add(attribute);
   div.innerHTML = text;
-  return div;
 };
 
 const renderErrors = (error, element) => {
   const invalidFeedback = document.querySelector('.invalid-feedback');
   if (_.isEqual(error, [])) {
-    removeClasses(input, invalidFeedback, 'is-invalid');
+    removeClasses(input, invalidFeedback, 'is-invalid', 'invalid-feedback');
     return;
   }
-  removeClasses(element, invalidFeedback, 'is-invalid');
-  let newFeedback;
+  removeClasses(element, invalidFeedback, 'is-invalid', 'invalid-feedback');
   switch (error) {
     case 'feed':
-      newFeedback = buildText('form.error.feed', 'invalid-feedback');
+      buildText('form.error.feed', 'invalid-feedback');
       break;
     case 'url':
-      newFeedback = buildText('form.error.url', 'invalid-feedback');
+      buildText('form.error.url', 'invalid-feedback');
       break;
     case 'network':
-      newFeedback = buildText('form.error.network', 'invalid-feedback');
+      buildText('form.error.network', 'invalid-feedback');
       break;
     default:
-      newFeedback = buildText('form.error.unknown', 'invalid-feedback');
+      buildText('form.error.unknown', 'invalid-feedback');
   }
-  const parent = element.parentElement;
   element.classList.add('is-invalid');
-  parent.append(newFeedback);
 };
 
 const feed = document.querySelector('.feeds');
@@ -54,10 +54,25 @@ const posts = document.querySelector('.posts');
 const ulFeeds = document.querySelector('.feed-list');
 const ulPosts = document.querySelector('.post-list');
 
-const watchedState = (state) => onChange(state, (path, value) => {
+export const formWatcher = (state) => onChange(state, (path, value) => {
+  if (path === 'form.state') {
+    if (value === 'proccesing') {
+      button.setAttribute('disabled', '');
+    }
+    if (value === 'proccessed') {
+      button.removeAttribute('disabled');
+      buildText('form.success', 'text-success');
+    }
+    if (value === 'failed') {
+      button.removeAttribute('disabled');
+    }
+  }
   if (path === 'error') {
     renderErrors(value, input);
   }
+});
+
+const watchedState = (state) => onChange(state, (path, value) => {
   if (path === 'feeds.listOfFeeds') {
     const lastAdded = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
       if (channelId > state.feeds.activeId) {
@@ -73,14 +88,21 @@ const watchedState = (state) => onChange(state, (path, value) => {
     feed.append(ulFeeds);
   }
   if (path === 'posts') {
-    value.flat().forEach(({ postId, title, link }) => {
+   // console.log(value);
+    const listOfPosts = value.flat().flatMap(({ postId, title, link }) => {
       if (Number(postId) > Number(state.feeds.activeId)) {
         const li = document.createElement('li');
         li.classList.add('list-group-item');
-        li.innerHTML = `<a href="${link}">${title.split('<')}</a>`;
-        ulPosts.prepend(li);
+        console.log(title);
+        li.innerHTML = `<a href="${link}">${title.split('<!\[CDATA\[(.*)\]\]>')}</a></li>`;
+       return li;
+        //ulPosts.append(li)
       }
+      return []
     });
+    console.log(...listOfPosts);
+    console.log(listOfPosts)
+    ulPosts.prepend(...listOfPosts)
     posts.append(postsHeading);
     posts.append(ulPosts);
   }
