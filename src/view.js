@@ -1,3 +1,4 @@
+/* eslint-disable no-param-reassign */
 import onChange from 'on-change';
 import _ from 'lodash';
 import i18next from 'i18next';
@@ -9,14 +10,14 @@ const removeClasses = (element, feedback, value, feedbackValue) => {
   element.classList.remove(value);
   if (feedback !== null) {
     feedback.classList.remove(feedbackValue);
-    feedback.innerHTML = ''
+    feedback.innerHTML = '';
   }
 };
 
 const buildText = (key, attribute) => {
   const text = i18next.t(`${key}`);
   const div = document.querySelector('.feedback');
-  div.innerHTML = ''
+  div.innerHTML = '';
   div.classList.remove('text-success');
   div.classList.add(attribute);
   div.innerHTML = text;
@@ -88,21 +89,16 @@ const watchedState = (state) => onChange(state, (path, value) => {
     feed.append(ulFeeds);
   }
   if (path === 'posts') {
-   // console.log(value);
     const listOfPosts = value.flat().flatMap(({ postId, title, link }) => {
       if (Number(postId) > Number(state.feeds.activeId)) {
         const li = document.createElement('li');
         li.classList.add('list-group-item');
-        console.log(title);
-        li.innerHTML = `<a href="${link}">${title.split('<!\[CDATA\[(.*)\]\]>')}</a></li>`;
-       return li;
-        //ulPosts.append(li)
+        li.innerHTML = `<a href="${link}">${title}</a></li>`;
+        return li;
       }
-      return []
+      return [];
     });
-    console.log(...listOfPosts);
-    console.log(listOfPosts)
-    ulPosts.prepend(...listOfPosts)
+    ulPosts.prepend(...listOfPosts);
     posts.append(postsHeading);
     posts.append(ulPosts);
   }
