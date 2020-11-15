@@ -38,7 +38,7 @@ export default () => {
     },
     error: [],
     feeds: {
-      activeId: null,
+      lastAdded: 0,
       listOfFeeds: [],
       urls: [],
     },

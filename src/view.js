@@ -56,50 +56,65 @@ const posts = document.querySelector('.posts');
 const ulFeeds = document.querySelector('.feed-list');
 const ulPosts = document.querySelector('.post-list');
 
-const watchedState = (state) => onChange(state, (path, value) => {
-  if (path === 'form.state') {
-    if (value === 'proccesing') {
-      button.setAttribute('disabled', '');
-      form.reset();
-    }
-    if (value === 'proccessed') {
+const workWithForm = (value) => {
+  switch (value) {
+    case 'proccessed':
       button.removeAttribute('disabled');
       buildText('form.success', 'text-success');
-    }
-    if (value === 'failed') {
+      break;
+    case 'failed':
       button.removeAttribute('disabled');
+      break;
+    default:
+      button.setAttribute('disabled', '');
+      form.reset();
+  }
+};
+const renderFeeds = (value, state) => {
+  const lastAdded = value.flatMap(({ channelNumber, channelName }) => {
+    if (channelNumber > state.feeds.lastAdded) {
+      return channelName;
     }
-  }
-  if (path === 'error') {
-    renderErrors(value, input);
-  }
-  if (path === 'feeds.listOfFeeds') {
-    const lastAdded = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
-      if (channelId > state.feeds.activeId) {
-        return channelName.split('<!');
-      }
-      return [];
-    });
-    const li = document.createElement('li');
-    li.classList.add('list-group-item');
-    li.innerHTML = lastAdded.join('');
-    ulFeeds.prepend(li);
-    feed.append(feedHeading);
-    feed.append(ulFeeds);
-  }
-  if (path === 'posts') {
-    const listOfPosts = value.flat().flatMap(({ postId, title, link }) => {
-      if (Number(postId) > Number(state.feeds.activeId)) {
-        const li = document.createElement('li');
-        li.classList.add('list-group-item');
-        li.innerHTML = `<a href="${link}">${title}</a></li>`;
-        return li;
-      }
-      return [];
-    });
-    ulPosts.prepend(...listOfPosts);
-    posts.append(postsHeading);
-    posts.append(ulPosts);
+    return [];
+  });
+  const li = document.createElement('li');
+  li.classList.add('list-group-item');
+  li.innerHTML = lastAdded.join('');
+  ulFeeds.prepend(li);
+  feed.append(feedHeading);
+  feed.append(ulFeeds);
+};
+
+const renderPosts = (value, state) => {
+  const listOfPosts = value.flat().flatMap(({ postNumber, title, link }) => {
+    if (Number(postNumber) > Number(state.feeds.lastAdded)) {
+      const li = document.createElement('li');
+      li.classList.add('list-group-item');
+      li.innerHTML = `<a href="${link}">${title}</a></li>`;
+      return li;
+    }
+    return [];
+  });
+  ulPosts.prepend(...listOfPosts);
+  posts.append(postsHeading);
+  posts.append(ulPosts);
+};
+
+const watchedState = (state) => onChange(state, (path, value) => {
+  // eslint-disable-next-line default-case
+  switch (path) {
+    case 'form.state':
+      workWithForm(value);
+      break;
+    case 'feeds.listOfFeeds':
+      renderFeeds(value, state);
+      break;
+    case 'posts':
+      renderPosts(value, state);
+      break;
+    case 'error':
+      renderErrors(value, input);
+      break;
   }
 });
 export default watchedState;

@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
 import parse from './parsing';
-import { findId, addProxy } from './utils';
+import { findId, addProxy, addNumbers } from './utils';
 
 const update = (state) => {
   const { urls } = state.feeds;
@@ -12,9 +12,10 @@ const update = (state) => {
   Promise.all(promise)
     .then((ar) => ar.forEach((re) => {
       const [feed, posts] = parse(re.data);
+      addNumbers(state, feed, posts);
       const id = findId(feeds, feed);
       old.forEach((oldPost) => {
-        oldPost.postId = id;
+        oldPost.postNumber = id;
       });
       posts.forEach((post) => newCheck.push(post));
     }))
