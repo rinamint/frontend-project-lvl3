@@ -1,20 +1,17 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
 import parse from './parsing';
-import { parseRss } from './formatter';
-import findId from './findId';
+import { findId, addProxy } from './utils';
 
-const updator = (state) => {
+const update = (state) => {
   const { urls } = state.feeds;
   const feeds = state.feeds.listOfFeeds;
   const newCheck = [];
   const old = state.posts.flat();
-  const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
-  const promise = urls.map((url) => axios.get(`${corsApiHost}${url}`));
+  const promise = urls.map((url) => axios.get(addProxy(url)));
   Promise.all(promise)
     .then((ar) => ar.forEach((re) => {
-      const parsed = parse(re.data);
-      const [feed, posts] = parseRss(parsed);
+      const [feed, posts] = parse(re.data);
       const id = findId(feeds, feed);
       old.forEach((oldPost) => {
         oldPost.postId = id;
@@ -37,11 +34,11 @@ const updator = (state) => {
       }
     })
     .then(() => {
-      setTimeout(() => updator(state), 5000);
+      setTimeout(() => update(state), 5000);
     })
     .catch(() => {
       state.error = 'network';
     });
 };
 
-export default updator;
+export default update;

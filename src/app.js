@@ -3,31 +3,31 @@ import * as yup from 'yup';
 import axios from 'axios';
 import _ from 'lodash';
 import i18next from 'i18next';
-import parsing from './parsing';
-import view, { formWatcher } from './view';
-import { parseRss, parseFeed } from './formatter';
+import { addProxy } from './utils';
+import parse, { updateState } from './parsing';
+import view from './view';
 import resources from './locales';
-import timer from './setTimeout';
+import update from './setTimeout';
 
 const schema = yup.object().shape({
-  url: yup.string().url(),
+  url: yup.string().required().url(),
 });
 
 const isDuplicate = (watcher, url) => _.includes(watcher.feeds.urls, url);
-
-const updateValidationState = (watcher) => {
+let isValid;
+const updateValidationState = (watcher, link) => {
   try {
-    schema.validateSync(watcher.form.inputValue, { abortEarly: false });
-    if (isDuplicate(watcher, watcher.form.inputValue.url)) {
-      watcher.form.isValid = false;
+    schema.validateSync({ url: link }, { abortEarly: false });
+    if (isDuplicate(watcher, link)) {
+      isValid = false;
       watcher.error = 'feed';
     } else {
-      watcher.form.isValid = true;
+      isValid = true;
       watcher.error = [];
     }
   } catch (e) {
     watcher.error = 'url';
-    watcher.form.isValid = false;
+    isValid = false;
   }
 };
 
@@ -35,10 +35,6 @@ export default () => {
   const state = {
     form: {
       state: 'filling',
-      isValid: true,
-      inputValue: {
-        url: '',
-      },
     },
     error: [],
     feeds: {
@@ -48,41 +44,36 @@ export default () => {
     },
     posts: [],
   };
+
   i18next.init({
     lng: 'en',
     debug: true,
     resources,
   });
   const watchedState = view(state);
-  const formState = formWatcher(state);
   const elements = {
     form: document.querySelector('form'),
     input: document.querySelector('#add'),
   };
-  timer(watchedState);
+  update(watchedState);
 
   elements.form.addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
     const link = formData.get('url');
-    watchedState.form.inputValue.url = link;
-    updateValidationState(formState, schema, elements);
-    if (watchedState.form.isValid) {
-      formState.form.state = 'proccesing';
-      e.target.reset();
-      const { url } = watchedState.form.inputValue;
-      const corsApiHost = 'https://cors-anywhere.herokuapp.com/';
-      axios.get(`${corsApiHost}${url}`)
-        .then((response) => parsing(response.data))
-        .then((doc) => parseRss(doc))
-        .then((data) => {
-          watchedState.feeds.urls.push(url);
-          parseFeed(data, watchedState);
-          formState.form.state = 'proccessed';
+    updateValidationState(watchedState, link);
+    if (isValid) {
+      watchedState.form.state = 'proccesing';
+      axios.get(addProxy(link))
+        .then((response) => {
+          const data = parse(response.data);
+          watchedState.feeds.urls.push(link);
+          updateState(data, watchedState);
+          watchedState.form.state = 'proccessed';
         })
         .catch(() => {
-          formState.error = 'network';
-          formState.form.state = 'failed';
+          watchedState.error = 'network';
+          watchedState.form.state = 'failed';
         });
     }
   });

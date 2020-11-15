@@ -5,6 +5,7 @@ import i18next from 'i18next';
 
 const input = document.querySelector('#add');
 const button = document.querySelector('.btn-primary');
+const form = document.querySelector('form');
 
 const removeClasses = (element, feedback, value, feedbackValue) => {
   element.classList.remove(value);
@@ -55,10 +56,11 @@ const posts = document.querySelector('.posts');
 const ulFeeds = document.querySelector('.feed-list');
 const ulPosts = document.querySelector('.post-list');
 
-export const formWatcher = (state) => onChange(state, (path, value) => {
+const watchedState = (state) => onChange(state, (path, value) => {
   if (path === 'form.state') {
     if (value === 'proccesing') {
       button.setAttribute('disabled', '');
+      form.reset();
     }
     if (value === 'proccessed') {
       button.removeAttribute('disabled');
@@ -71,9 +73,6 @@ export const formWatcher = (state) => onChange(state, (path, value) => {
   if (path === 'error') {
     renderErrors(value, input);
   }
-});
-
-const watchedState = (state) => onChange(state, (path, value) => {
   if (path === 'feeds.listOfFeeds') {
     const lastAdded = state.feeds.listOfFeeds.flatMap(({ channelId, channelName }) => {
       if (channelId > state.feeds.activeId) {
