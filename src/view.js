@@ -26,7 +26,7 @@ const buildText = (key, attribute) => {
 
 const renderErrors = (error, element) => {
   const invalidFeedback = document.querySelector('.invalid-feedback');
-  if (_.isEqual(error, [])) {
+  if (_.isEqual(error, '')) {
     removeClasses(input, invalidFeedback, 'is-invalid', 'invalid-feedback');
     return;
   }
@@ -35,10 +35,10 @@ const renderErrors = (error, element) => {
     case 'feed':
       buildText('form.error.feed', 'invalid-feedback');
       break;
-    case 'url':
+    case 'url must be a valid URL':
       buildText('form.error.url', 'invalid-feedback');
       break;
-    case 'network':
+    case 'Network Error':
       buildText('form.error.network', 'invalid-feedback');
       break;
     default:
@@ -72,7 +72,7 @@ const workWithForm = (value) => {
 };
 const renderFeeds = (value, state) => {
   const lastAdded = value.flatMap(({ channelNumber, channelName }) => {
-    if (channelNumber > state.feeds.lastAdded) {
+    if (channelNumber > state.feeds.NumOfLastAdded) {
       return channelName;
     }
     return [];
@@ -87,7 +87,7 @@ const renderFeeds = (value, state) => {
 
 const renderPosts = (value, state) => {
   const listOfPosts = value.flat().flatMap(({ postNumber, title, link }) => {
-    if (Number(postNumber) > Number(state.feeds.lastAdded)) {
+    if (Number(postNumber) > Number(state.feeds.NumOfLastAdded)) {
       const li = document.createElement('li');
       li.classList.add('list-group-item');
       li.innerHTML = `<a href="${link}">${title}</a></li>`;

@@ -1,32 +1,25 @@
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
 import axios from 'axios';
-import _ from 'lodash';
 import i18next from 'i18next';
-import { addProxy } from './utils';
-import parse, { updateState } from './parsing';
+import { addProxy, updateState } from './utils';
+import parse from './parsing';
 import view from './view';
 import resources from './locales';
 import update from './setTimeout';
 
-const schema = yup.object().shape({
-  url: yup.string().required().url(),
-});
-
-const isDuplicate = (watcher, url) => _.includes(watcher.feeds.urls, url);
 let isValid;
 const updateValidationState = (watcher, link) => {
+  const listOfUrls = watcher.feeds.listOfFeeds.map((feed) => feed.link);
+  const schema = yup.object().shape({
+    url: yup.string().required().url().notOneOf(listOfUrls, 'feed'),
+  });
   try {
     schema.validateSync({ url: link }, { abortEarly: false });
-    if (isDuplicate(watcher, link)) {
-      isValid = false;
-      watcher.error = 'feed';
-    } else {
-      isValid = true;
-      watcher.error = [];
-    }
+    watcher.error = '';
+    isValid = true;
   } catch (e) {
-    watcher.error = 'url';
+    watcher.error = e.message;
     isValid = false;
   }
 };
@@ -36,11 +29,10 @@ export default () => {
     form: {
       state: 'filling',
     },
-    error: [],
+    error: '',
     feeds: {
-      lastAdded: 0,
+      NumOfLastAdded: 0,
       listOfFeeds: [],
-      urls: [],
     },
     posts: [],
   };
@@ -49,32 +41,30 @@ export default () => {
     lng: 'en',
     debug: true,
     resources,
-  });
-  const watchedState = view(state);
-  const elements = {
-    form: document.querySelector('form'),
-    input: document.querySelector('#add'),
-  };
-  update(watchedState);
+  })
+    .then(() => {
+      const watchedState = view(state);
+      const form = document.querySelector('form');
+      update(watchedState);
 
-  elements.form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const link = formData.get('url');
-    updateValidationState(watchedState, link);
-    if (isValid) {
-      watchedState.form.state = 'proccesing';
-      axios.get(addProxy(link))
-        .then((response) => {
-          const data = parse(response.data);
-          watchedState.feeds.urls.push(link);
-          updateState(data, watchedState);
-          watchedState.form.state = 'proccessed';
-        })
-        .catch(() => {
-          watchedState.error = 'network';
-          watchedState.form.state = 'failed';
-        });
-    }
-  });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const link = formData.get('url');
+        updateValidationState(watchedState, link);
+        if (isValid) {
+          watchedState.form.state = 'proccesing';
+          axios.get(addProxy(link))
+            .then((response) => {
+              const data = parse(response.data);
+              updateState(data, watchedState, link);
+              watchedState.form.state = 'proccessed';
+            })
+            .catch((error) => {
+              watchedState.error = error.message;
+              watchedState.form.state = 'failed';
+            });
+        }
+      });
+    });
 };

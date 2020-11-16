@@ -1,6 +1,3 @@
-/* eslint-disable no-param-reassign */
-import { addNumbers } from './utils';
-
 export default (data) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(data, 'application/xml');
@@ -13,12 +10,4 @@ export default (data) => {
     return { title: title.textContent, link: link.innerHTML };
   });
   return [channel, arrayOfPosts];
-};
-
-export const updateState = (data, state) => {
-  const [channel, arrayOfPosts] = data;
-  addNumbers(state, channel, arrayOfPosts);
-  state.feeds.listOfFeeds.push(channel);
-  state.posts.push(arrayOfPosts.flat());
-  state.feeds.lastAdded = channel.channelNumber;
 };

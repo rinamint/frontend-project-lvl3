@@ -1,10 +1,10 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
 import parse from './parsing';
-import { findId, addProxy, addNumbers } from './utils';
+import { findNum, addProxy, addNumbers } from './utils';
 
 const update = (state) => {
-  const { urls } = state.feeds;
+  const urls = state.feeds.listOfFeeds.map((feed) => feed.link);
   const feeds = state.feeds.listOfFeeds;
   const newCheck = [];
   const old = state.posts.flat();
@@ -13,9 +13,9 @@ const update = (state) => {
     .then((ar) => ar.forEach((re) => {
       const [feed, posts] = parse(re.data);
       addNumbers(state, feed, posts);
-      const id = findId(feeds, feed);
+      const lineNum = findNum(feeds, feed);
       old.forEach((oldPost) => {
-        oldPost.postNumber = id;
+        oldPost.postNumber = lineNum;
       });
       posts.forEach((post) => newCheck.push(post));
     }))
@@ -37,8 +37,8 @@ const update = (state) => {
     .then(() => {
       setTimeout(() => update(state), 5000);
     })
-    .catch(() => {
-      state.error = 'network';
+    .catch((e) => {
+      state.error = e.message;
     });
 };
 
