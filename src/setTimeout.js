@@ -12,12 +12,12 @@ const update = (state) => {
   Promise.all(promise)
     .then((ar) => ar.forEach((re) => {
       const [feed, posts] = parse(re.data);
-      addNumbers(state, feed, posts);
-      const lineNum = findNum(feeds, feed);
+      const [numFeed, numPosts] = addNumbers(state, feed, posts);
+      const lineNum = findNum(feeds, numFeed);
       old.forEach((oldPost) => {
         oldPost.postNumber = lineNum;
       });
-      posts.forEach((post) => newCheck.push(post));
+      numPosts.forEach((post) => newCheck.push(post));
     }))
     .then(() => {
       const oldTitles = old.flat().map((element) => element.title);
@@ -38,7 +38,7 @@ const update = (state) => {
       setTimeout(() => update(state), 5000);
     })
     .catch((e) => {
-      state.error = e.message;
+      state.form.error = e.message;
     });
 };
 

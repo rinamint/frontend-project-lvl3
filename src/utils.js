@@ -15,18 +15,21 @@ export const addProxy = (link) => {
 };
 
 export const addNumbers = (state, channel, posts) => {
-  const numberInLine = state.feeds.NumOfLastAdded;
-  channel.channelNumber = numberInLine + 1;
-  posts.forEach((post) => {
+  const newPosts = [...posts];
+  const newChannel = { ...channel };
+  const numberInLine = state.feeds.numOfLastAdded;
+  newChannel.channelNumber = numberInLine + 1;
+  newPosts.forEach((post) => {
     post.postNumber = numberInLine + 1;
   });
+  return [newChannel, newPosts];
 };
 
-export const updateState = (data, state, link) => {
+export const updateDataState = (data, state, link) => {
   const [channel, arrayOfPosts] = data;
-  addNumbers(state, channel, arrayOfPosts);
-  channel.link = link;
-  state.feeds.listOfFeeds.push(channel);
-  state.posts.push(arrayOfPosts.flat());
-  state.feeds.NumOfLastAdded = channel.channelNumber;
+  const [newChannel, newPosts] = addNumbers(state, channel, arrayOfPosts);
+  newChannel.link = link;
+  state.feeds.listOfFeeds.push(newChannel);
+  state.posts.push(newPosts);
+  state.feeds.numOfLastAdded = newChannel.channelNumber;
 };

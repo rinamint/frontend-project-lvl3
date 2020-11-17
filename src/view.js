@@ -61,25 +61,22 @@ const workWithForm = (value) => {
     case 'proccessed':
       button.removeAttribute('disabled');
       buildText('form.success', 'text-success');
+      form.reset();
       break;
     case 'failed':
       button.removeAttribute('disabled');
       break;
     default:
       button.setAttribute('disabled', '');
-      form.reset();
   }
 };
 const renderFeeds = (value, state) => {
-  const lastAdded = value.flatMap(({ channelNumber, channelName }) => {
-    if (channelNumber > state.feeds.NumOfLastAdded) {
-      return channelName;
-    }
-    return [];
-  });
   const li = document.createElement('li');
-  li.classList.add('list-group-item');
-  li.innerHTML = lastAdded.join('');
+  const lastAdded = value.filter((channel) => channel.channelNumber > state.feeds.numOfLastAdded);
+  lastAdded.forEach((channel) => {
+    li.classList.add('list-group-item');
+    li.innerHTML = `<h3>${channel.channelName}</h3><p>${channel.description}</p>`;
+  });
   ulFeeds.prepend(li);
   feed.append(feedHeading);
   feed.append(ulFeeds);
@@ -87,7 +84,7 @@ const renderFeeds = (value, state) => {
 
 const renderPosts = (value, state) => {
   const listOfPosts = value.flat().flatMap(({ postNumber, title, link }) => {
-    if (Number(postNumber) > Number(state.feeds.NumOfLastAdded)) {
+    if (Number(postNumber) > Number(state.feeds.numOfLastAdded)) {
       const li = document.createElement('li');
       li.classList.add('list-group-item');
       li.innerHTML = `<a href="${link}">${title}</a></li>`;
@@ -100,21 +97,19 @@ const renderPosts = (value, state) => {
   posts.append(ulPosts);
 };
 
-const watchedState = (state) => onChange(state, (path, value) => {
-  // eslint-disable-next-line default-case
-  switch (path) {
-    case 'form.state':
-      workWithForm(value);
-      break;
-    case 'feeds.listOfFeeds':
-      renderFeeds(value, state);
-      break;
-    case 'posts':
-      renderPosts(value, state);
-      break;
-    case 'error':
-      renderErrors(value, input);
-      break;
+const render = (state) => onChange(state, (path, value) => {
+  if (path === 'form.state') {
+    workWithForm(value);
+  }
+  if (path === 'feeds.listOfFeeds') {
+    renderFeeds(value, state);
+  }
+  if (path === 'posts') {
+    renderPosts(value, state);
+  }
+  if (path === 'form.error') {
+    renderErrors(value, input);
   }
 });
-export default watchedState;
+
+export default render;
