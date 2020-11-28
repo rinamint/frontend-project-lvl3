@@ -3,9 +3,15 @@ import onChange from 'on-change';
 import _ from 'lodash';
 import i18next from 'i18next';
 
-const input = document.querySelector('#add');
-const button = document.querySelector('.btn-primary');
-const form = document.querySelector('form');
+const elements = {
+  input: document.querySelector('#add'),
+  button: document.querySelector('.btn-primary'),
+  form: document.querySelector('form'),
+  feed: document.querySelector('.feeds'),
+  posts: document.querySelector('.posts'),
+  ulFeeds: document.querySelector('.feed-list'),
+  ulPosts: document.querySelector('.post-list'),
+};
 
 const removeClasses = (element, feedback, value, feedbackValue) => {
   element.classList.remove(value);
@@ -16,7 +22,7 @@ const removeClasses = (element, feedback, value, feedbackValue) => {
 };
 
 const buildText = (key, attribute) => {
-  const text = i18next.t(`${key}`);
+  const text = i18next.t(key);
   const div = document.querySelector('.feedback');
   div.innerHTML = '';
   div.classList.remove('text-success');
@@ -27,63 +33,48 @@ const buildText = (key, attribute) => {
 const renderErrors = (error, element) => {
   const invalidFeedback = document.querySelector('.invalid-feedback');
   if (_.isEqual(error, '')) {
-    removeClasses(input, invalidFeedback, 'is-invalid', 'invalid-feedback');
+    removeClasses(element, invalidFeedback, 'is-invalid', 'invalid-feedback');
     return;
   }
   removeClasses(element, invalidFeedback, 'is-invalid', 'invalid-feedback');
-  switch (error) {
-    case 'feed':
-      buildText('form.error.feed', 'invalid-feedback');
-      break;
-    case 'url must be a valid URL':
-      buildText('form.error.url', 'invalid-feedback');
-      break;
-    case 'Network Error':
-      buildText('form.error.network', 'invalid-feedback');
-      break;
-    default:
-      buildText('form.error.unknown', 'invalid-feedback');
-  }
+  buildText(error, 'invalid-feedback');
   element.classList.add('is-invalid');
 };
 
-const feed = document.querySelector('.feeds');
-const feedHeading = document.createElement('h2');
-const postsHeading = document.createElement('h2');
-feedHeading.innerHTML = 'FEEDS';
-postsHeading.innerHTML = 'POSTS';
-const posts = document.querySelector('.posts');
-const ulFeeds = document.querySelector('.feed-list');
-const ulPosts = document.querySelector('.post-list');
-
-const workWithForm = (value) => {
+const renderForm = (value, error = '') => {
   switch (value) {
     case 'proccessed':
-      button.removeAttribute('disabled');
+      elements.button.removeAttribute('disabled');
       buildText('form.success', 'text-success');
-      form.reset();
+      elements.form.reset();
       break;
     case 'failed':
-      button.removeAttribute('disabled');
+      renderErrors(error, elements.input);
+      elements.button.removeAttribute('disabled');
       break;
     default:
-      button.setAttribute('disabled', '');
+      elements.button.setAttribute('disabled', '');
   }
 };
+
+const feedHeading = document.createElement('h2');
+const postsHeading = document.createElement('h2');
+
 const renderFeeds = (value, state) => {
+  feedHeading.innerText = i18next.t('feedHeading');
   const li = document.createElement('li');
   const lastAdded = value.filter((channel) => channel.channelNumber > state.feeds.numOfLastAdded);
   lastAdded.forEach((channel) => {
     li.classList.add('list-group-item');
     li.innerHTML = `<h3>${channel.channelName}</h3><p>${channel.description}</p>`;
   });
-  ulFeeds.prepend(li);
-  feed.append(feedHeading);
-  feed.append(ulFeeds);
+  elements.ulFeeds.prepend(li);
+  elements.feed.append(feedHeading);
+  elements.feed.append(elements.ulFeeds);
 };
-
 const renderPosts = (value, state) => {
-  const listOfPosts = value.flat().flatMap(({ postNumber, title, link }) => {
+  postsHeading.innerText = i18next.t('postHeading');
+  const list = value.flatMap(({ postNumber, title, link }) => {
     if (Number(postNumber) > Number(state.feeds.numOfLastAdded)) {
       const li = document.createElement('li');
       li.classList.add('list-group-item');
@@ -92,23 +83,23 @@ const renderPosts = (value, state) => {
     }
     return [];
   });
-  ulPosts.prepend(...listOfPosts);
-  posts.append(postsHeading);
-  posts.append(ulPosts);
+  elements.ulPosts.prepend(...list);
+  elements.posts.append(postsHeading);
+  elements.posts.append(elements.ulPosts);
 };
 
 const render = (state) => onChange(state, (path, value) => {
   if (path === 'form.state') {
-    workWithForm(value);
+    renderForm(value, state.form.error);
   }
-  if (path === 'feeds.listOfFeeds') {
+  if (path === 'data.feeds') {
     renderFeeds(value, state);
   }
-  if (path === 'posts') {
+  if (path === 'data.posts') {
     renderPosts(value, state);
   }
   if (path === 'form.error') {
-    renderErrors(value, input);
+    renderErrors(value, elements.input);
   }
 });
 

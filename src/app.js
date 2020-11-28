@@ -7,32 +7,34 @@ import { addProxy, updateDataState } from './utils';
 import parse from './parsing';
 import view from './view';
 import resources from './locales';
-import update from './setTimeout';
+import update from './update';
 
 const validate = (watcher, link) => {
-  const listOfUrls = watcher.feeds.listOfFeeds.map((feed) => feed.link);
+  const listOfUrls = watcher.data.feeds.map((feed) => feed.link);
   const schema = yup.object().shape({
-    url: yup.string().required().url().notOneOf(listOfUrls, 'feed'),
+    url: yup.string().required().url().notOneOf(listOfUrls, `${i18next.t('form.error.feed')}`),
   });
   try {
     schema.validateSync({ url: link }, { abortEarly: false });
-    watcher.form.error = '';
+    return '';
   } catch (e) {
-    watcher.form.error = e.message;
+    return e.message;
   }
 };
-
 export default () => {
   const state = {
     form: {
       state: 'filling',
       error: '',
     },
+    data: {
+      posts: [],
+      feeds: [],
+    },
     feeds: {
       numOfLastAdded: 0,
       listOfFeeds: [],
     },
-    posts: [],
   };
 
   i18next.init({
@@ -49,7 +51,7 @@ export default () => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const link = formData.get('url');
-        validate(watchedState, link);
+        watchedState.form.error = validate(watchedState, link);
         if (_.isEqual(watchedState.form.error, '')) {
           watchedState.form.state = 'proccesing';
           axios.get(addProxy(link))
@@ -62,6 +64,8 @@ export default () => {
               watchedState.form.error = error.message;
               watchedState.form.state = 'failed';
             });
+        } else {
+          watchedState.form.state = 'failed';
         }
       });
     });

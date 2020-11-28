@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 export const findNum = (listOfFeeds, newFeed) => {
   const num = listOfFeeds.flatMap((feed) => {
-    if (feed.link === newFeed.link) {
+    if (feed.channelName === newFeed.channelName) {
       return feed.channelNumber;
     }
     return [];
@@ -15,7 +15,7 @@ export const addProxy = (link) => {
 };
 
 export const addNumbers = (state, channel, posts) => {
-  const newPosts = [...posts];
+  const newPosts = posts.map((post) => post);
   const newChannel = { ...channel };
   const numberInLine = state.feeds.numOfLastAdded;
   newChannel.channelNumber = numberInLine + 1;
@@ -26,10 +26,9 @@ export const addNumbers = (state, channel, posts) => {
 };
 
 export const updateDataState = (data, state, link) => {
-  const [channel, arrayOfPosts] = data;
-  const [newChannel, newPosts] = addNumbers(state, channel, arrayOfPosts);
-  newChannel.link = link;
-  state.feeds.listOfFeeds.push(newChannel);
-  state.posts.push(newPosts);
+  const [channel, posts] = data;
+  const [newChannel, newPosts] = addNumbers(state, channel, posts);
+  state.data.posts.push(...newPosts);
+  state.data.feeds.push({ ...newChannel, link });
   state.feeds.numOfLastAdded = newChannel.channelNumber;
 };
