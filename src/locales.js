@@ -3,7 +3,10 @@ export default {
     translation: {
       form: {
         error: {
-          feed: 'URL has been added',
+          duplicate: 'URL has been added',
+          url: 'url must be a valid URL',
+          network: 'Network error',
+          parsing: 'This source doesn\'t contain valid RSS',
         },
         success: 'Rss has been loaded',
       },
