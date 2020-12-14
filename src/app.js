@@ -10,24 +10,14 @@ import view from './view';
 import resources from './locales';
 import update from './update';
 
-const validateForm = (watcher, link) => {
-  const urls = watcher.data.feeds.map((feed) => feed.url);
-  const schema = yup.object().shape({
-    url: yup.string().required().url(i18next.t('form.error.url')).notOneOf(urls, i18next.t('form.error.duplicate')),
-  });
+const validateForm = (feeds, link) => {
+  const urls = feeds.map((feed) => feed.url);
+  const rssLinkSchema = yup.string().required().url('form.error.url').notOneOf(urls, 'form.error.duplicate');
   try {
-    schema.validateSync({ url: link }, { abortEarly: false });
+    rssLinkSchema.validateSync(link, { abortEarly: false });
     return '';
   } catch (e) {
-    if (e.message === 'URL has been added') {
-      return 'form.error.duplicate';
-    }
-    if (e.message === 'url must be a valid URL') {
-      return 'form.error.url';
-    }
-    if (e.message === 'Network Error') {
-      return 'form.error.network';
-    }
+    return e.message;
   }
 };
 export default () => {
@@ -38,11 +28,18 @@ export default () => {
     },
     data: {
       posts: [],
-      viewedPosts: [],
       feeds: [],
     },
-    feeds: {
-      numOfLastAdded: 0,
+    ui: {
+      modal: {
+        current: null,
+        descriptions: {},
+        viewedPosts: new Set(),
+      },
+      links: {
+        current: null,
+        pressedLinks: new Set(),
+      },
     },
   };
 
@@ -62,15 +59,24 @@ export default () => {
         ulPosts: document.querySelector('.post-list'),
       };
       const watchedState = view(state, elements);
-      const form = document.querySelector('form');
       update(watchedState);
+      elements.posts.addEventListener('click', (e) => {
+        const { target } = e;
+        const isModal = target.getAttribute('data-toggle') === 'modal';
+        if (isModal) {
+          const current = target.closest('li');
+          watchedState.ui.modal.current = current;
+        } else {
+          watchedState.ui.links.current = target;
+        }
+      });
 
-      form.addEventListener('submit', (e) => {
+      elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const link = formData.get('url');
-        watchedState.form.error = validateForm(watchedState, link);
-        if (_.isEqual(watchedState.form.error, '')) {
+        const error = validateForm(watchedState.data.feeds, link);
+        if (_.isEqual(error, '')) {
           watchedState.form.state = 'proccesing';
           axios.get(addProxy(link))
             .then((response) => {
@@ -78,13 +84,18 @@ export default () => {
               updateDataState(data, watchedState, link);
               watchedState.form.state = 'proccessed';
             })
-            .catch((error) => {
-              const { message } = error;
-              watchedState.form.error = message === 'Request failed with status code 404' ? 'form.error.parsing' : 'form.error.network';
+            .catch((err) => {
+              const { message } = err;
+              watchedState.form.error = message === 'parsing' ? 'form.error.parsing' : 'form.error.network';
               watchedState.form.state = 'failed';
             });
         } else {
+          const isAdded = watchedState.form.error === error;
+          if (isAdded) {
+            return;
+          }
           watchedState.form.state = 'failed';
+          watchedState.form.error = error;
         }
       });
     });

@@ -2,7 +2,6 @@
 import onChange from 'on-change';
 import _ from 'lodash';
 import i18next from 'i18next';
-import { renderBtns } from './utils';
 
 const removeClasses = (element, feedback, value, feedbackValue) => {
   element.classList.remove(value);
@@ -54,19 +53,49 @@ const renderForm = (value, error = '', elements) => {
 const feedHeading = document.createElement('h2');
 const postsHeading = document.createElement('h2');
 
-const renderFeeds = (value, state, elements) => {
+const renderFeeds = (value, elements) => {
   feedHeading.innerText = i18next.t('feedHeading');
-  const li = document.createElement('li');
-  const lastAdded = value.filter((channel) => channel.channelNumber > state.feeds.numOfLastAdded);
-  lastAdded.forEach((channel) => {
+  const feeds = value.map((channel) => {
+    const li = document.createElement('li');
     li.classList.add('list-group-item');
-
     li.innerHTML = `<h3>${channel.channelName}</h3><p>${channel.description}</p>`;
+    return li;
   });
-  elements.ulFeeds.prepend(li);
+  elements.ulFeeds.innerHTML = '';
+  elements.ulFeeds.prepend(...feeds);
   elements.feed.append(feedHeading);
   elements.feed.append(elements.ulFeeds);
 };
+
+const createBtn = (id) => {
+  const btn = `<button type='button' data-id=${id} data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'> Preview </button>`;
+  return btn;
+};
+
+const renderBtn = (li, state) => {
+  const modal = document.querySelector('#modal');
+  const full = modal.querySelector('.full-article');
+  const title = modal.querySelector('.modal-title');
+  const body = modal.querySelector('.modal-body');
+  const postBody = li.querySelector('a');
+  const link = postBody.getAttribute('href');
+  const elementId = postBody.getAttribute('data-id');
+  const postTitle = postBody.textContent;
+  const description = state.ui.modal.descriptions[elementId];
+  postBody.classList.remove('font-weight-bold');
+  postBody.classList.add('font-weight-normal');
+  state.ui.modal.viewedPosts.add(elementId);
+  full.setAttribute('href', `${link}`);
+  title.innerHTML = postTitle;
+  body.innerHTML = description;
+};
+const renderPressedLink = (link, state) => {
+  link.classList.remove('font-weight-bold');
+  link.classList.add('font-weight-normal');
+  const url = link.getAttribute('href');
+  state.ui.links.pressedLinks.add(url);
+};
+
 const renderPosts = (value, state, elements) => {
   postsHeading.innerText = i18next.t('postHeading');
   const list = value.map(({
@@ -74,16 +103,24 @@ const renderPosts = (value, state, elements) => {
   }) => {
     const li = document.createElement('li');
     li.classList.add('list-group-item');
+    li.classList.add('d-flex');
+    li.classList.add('justify-content-between');
+    li.classList.add('align-items-start');
     const postBody = document.createElement('a');
     postBody.setAttribute('href', `${link}`);
     postBody.setAttribute('rel', 'noopener noreferrer');
     postBody.setAttribute('data-id', `${postId}`);
+    postBody.setAttribute('target', '_blank');
     postBody.innerText = `${title}`;
-    const style = state.data.viewedPosts.includes(postId) ? 'font-weight-normal' : 'font-weight-bold';
-    postBody.classList.add(style);
-    const btn = renderBtns(postId, title, description, link, postBody, state);
-    li.append(postBody);
-    li.append(btn);
+    const modalStyle = state.ui.modal.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
+    const linkStyle = state.ui.links.pressedLinks.has(link) ? 'font-weight-normal' : 'font-weight-bold';
+    const commonStyle = modalStyle === linkStyle ? 'font-weight-bold' : 'font-weight-normal';
+
+    postBody.classList.add(commonStyle);
+    state.ui.modal.descriptions[`${postId}`] = description;
+    const btn = createBtn(postId);
+    li.innerHTML = btn;
+    li.prepend(postBody);
     return li;
   });
   elements.ulPosts.innerHTML = '';
@@ -97,13 +134,19 @@ const render = (state, elements) => onChange(state, (path, value) => {
     renderForm(value, state.form.error, elements);
   }
   if (path === 'data.feeds') {
-    renderFeeds(value, state, elements);
+    renderFeeds(value, elements);
   }
   if (path === 'data.posts') {
     renderPosts(value, state, elements);
   }
   if (path === 'form.error') {
     renderErrors(value, elements.input);
+  }
+  if (path === 'ui.modal.current') {
+    renderBtn(value, state);
+  }
+  if (path === 'ui.links.current') {
+    renderPressedLink(value, state);
   }
 });
 
