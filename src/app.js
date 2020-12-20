@@ -23,6 +23,10 @@ const validateForm = (feeds, link) => {
 export default () => {
   const state = {
     form: {
+      input: {
+        state: 'valid',
+        error: null,
+      },
       state: 'filling',
       error: '',
     },
@@ -31,14 +35,10 @@ export default () => {
       feeds: [],
     },
     ui: {
-      modal: {
-        current: null,
-        descriptions: {},
+      viewed: {
+        currentModal: null,
+        currentLink: null,
         viewedPosts: new Set(),
-      },
-      links: {
-        current: null,
-        pressedLinks: new Set(),
       },
     },
   };
@@ -62,12 +62,15 @@ export default () => {
       update(watchedState);
       elements.posts.addEventListener('click', (e) => {
         const { target } = e;
-        const isModal = target.getAttribute('data-toggle') === 'modal';
+        const isModal = target.dataset.toggle === 'modal';
+        const link = target.hasAttribute('href');
+        const { id } = target.dataset;
         if (isModal) {
-          const current = target.closest('li');
-          watchedState.ui.modal.current = current;
-        } else {
-          watchedState.ui.links.current = target;
+          watchedState.ui.viewed.viewedPosts.add(id);
+          watchedState.ui.viewed.currentModal = id;
+        } else if (link) {
+          watchedState.ui.viewed.viewedPosts.add(id);
+          watchedState.ui.viewed.currentLink = id;
         }
       });
 
@@ -76,27 +79,33 @@ export default () => {
         const formData = new FormData(e.target);
         const link = formData.get('url');
         const error = validateForm(watchedState.data.feeds, link);
-        if (_.isEqual(error, '')) {
-          watchedState.form.state = 'proccesing';
-          axios.get(addProxy(link))
-            .then((response) => {
-              const data = parse(response.data);
-              updateDataState(data, watchedState, link);
-              watchedState.form.state = 'proccessed';
-            })
-            .catch((err) => {
-              const { message } = err;
-              watchedState.form.error = message === 'parsing' ? 'form.error.parsing' : 'form.error.network';
-              watchedState.form.state = 'failed';
-            });
-        } else {
-          const isAdded = watchedState.form.error === error;
-          if (isAdded) {
-            return;
-          }
+        watchedState.form.state = 'proccesing';
+        watchedState.form.error = error;
+        if (error) {
           watchedState.form.state = 'failed';
           watchedState.form.error = error;
+          return;
         }
+        axios.get(addProxy(link))
+          .then((response) => {
+            const data = parse(response.data);
+            updateDataState(data, watchedState, link);
+            watchedState.form.state = 'proccessed';
+          })
+          .catch((err) => {
+            const { message } = err;
+            switch (message) {
+              case 'parsing':
+                watchedState.form.error = 'form.error.parsing';
+                break;
+              case 'Network Error':
+                watchedState.form.error = 'form.error.network';
+                break;
+              default:
+                watchedState.form.error = 'form.error.unknown';
+            }
+            watchedState.form.state = 'failed';
+          });
       });
     });
 };

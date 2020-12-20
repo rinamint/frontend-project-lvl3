@@ -1,6 +1,5 @@
 /* eslint-disable no-param-reassign */
 import onChange from 'on-change';
-import _ from 'lodash';
 import i18next from 'i18next';
 
 const removeClasses = (element, feedback, value, feedbackValue) => {
@@ -20,18 +19,8 @@ const buildText = (key, attribute) => {
   div.innerHTML = text;
 };
 
-const renderErrors = (error, element) => {
-  const invalidFeedback = document.querySelector('.invalid-feedback');
-  if (_.isEqual(error, '')) {
-    removeClasses(element, invalidFeedback, 'is-invalid', 'invalid-feedback');
-    return;
-  }
-  removeClasses(element, invalidFeedback, 'is-invalid', 'invalid-feedback');
-  buildText(error, 'invalid-feedback');
-  element.classList.add('is-invalid');
-};
-
 const renderForm = (value, error = '', elements) => {
+  const invalidFeedback = document.querySelector('.invalid-feedback');
   switch (value) {
     case 'proccessed':
       elements.button.removeAttribute('disabled');
@@ -40,11 +29,13 @@ const renderForm = (value, error = '', elements) => {
       elements.form.reset();
       break;
     case 'failed':
-      renderErrors(error, elements.input);
+      buildText(error, 'invalid-feedback');
+      elements.input.classList.add('is-invalid');
       elements.button.removeAttribute('disabled');
       elements.input.removeAttribute('disabled');
       break;
     default:
+      removeClasses(elements.input, invalidFeedback, 'is-invalid', 'invalid-feedback');
       elements.button.setAttribute('disabled', '');
       elements.input.setAttribute('disabled', '');
   }
@@ -67,64 +58,48 @@ const renderFeeds = (value, elements) => {
   elements.feed.append(elements.ulFeeds);
 };
 
-const createBtn = (id) => {
-  const btn = `<button type='button' data-id=${id} data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'> Preview </button>`;
-  return btn;
-};
-
-const renderBtn = (li, state) => {
+const renderModal = (id, state) => {
   const modal = document.querySelector('#modal');
   const full = modal.querySelector('.full-article');
   const title = modal.querySelector('.modal-title');
   const body = modal.querySelector('.modal-body');
-  const postBody = li.querySelector('a');
+  const postBody = document.querySelector(`a[data-id="${id}"]`);
   const link = postBody.getAttribute('href');
-  const elementId = postBody.getAttribute('data-id');
   const postTitle = postBody.textContent;
-  const description = state.ui.modal.descriptions[elementId];
+  const description = state.data.posts.filter((post) => post.postId === id)
+    .map((post) => post.description);
   postBody.classList.remove('font-weight-bold');
   postBody.classList.add('font-weight-normal');
-  state.ui.modal.viewedPosts.add(elementId);
   full.setAttribute('href', `${link}`);
   title.innerHTML = postTitle;
-  body.innerHTML = description;
+  body.innerHTML = description.join('');
 };
-const renderPressedLink = (link, state) => {
+
+const renderPressedLink = (id) => {
+  const link = document.querySelector(`a[data-id="${id}"]`);
   link.classList.remove('font-weight-bold');
   link.classList.add('font-weight-normal');
-  const url = link.getAttribute('href');
-  state.ui.links.pressedLinks.add(url);
 };
 
 const renderPosts = (value, state, elements) => {
   postsHeading.innerText = i18next.t('postHeading');
   const list = value.map(({
-    title, link, description, postId,
+    title, link, postId,
   }) => {
-    const li = document.createElement('li');
-    li.classList.add('list-group-item');
-    li.classList.add('d-flex');
-    li.classList.add('justify-content-between');
-    li.classList.add('align-items-start');
-    const postBody = document.createElement('a');
-    postBody.setAttribute('href', `${link}`);
-    postBody.setAttribute('rel', 'noopener noreferrer');
-    postBody.setAttribute('data-id', `${postId}`);
-    postBody.setAttribute('target', '_blank');
-    postBody.innerText = `${title}`;
-    const modalStyle = state.ui.modal.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
-    const linkStyle = state.ui.links.pressedLinks.has(link) ? 'font-weight-normal' : 'font-weight-bold';
-    const commonStyle = modalStyle === linkStyle ? 'font-weight-bold' : 'font-weight-normal';
-
-    postBody.classList.add(commonStyle);
-    state.ui.modal.descriptions[`${postId}`] = description;
-    const btn = createBtn(postId);
-    li.innerHTML = btn;
-    li.prepend(postBody);
+    const style = state.ui.viewed.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
+    const btn = `<button type='button' data-id=${postId} data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
+     Preview 
+     </button>`;
+    const li = `<li class="list-group-item d-flex justify-content-between align-items-start">
+    <a href=${link} rel="noopener noreferrer" data-id=${postId} target="_blank" class=${style}> 
+    ${title}
+    </a>
+    ${btn}
+    </li>`;
     return li;
   });
   elements.ulPosts.innerHTML = '';
-  elements.ulPosts.prepend(...list);
+  elements.ulPosts.innerHTML = list.join('');
   elements.posts.append(postsHeading);
   elements.posts.append(elements.ulPosts);
 };
@@ -139,13 +114,10 @@ const render = (state, elements) => onChange(state, (path, value) => {
   if (path === 'data.posts') {
     renderPosts(value, state, elements);
   }
-  if (path === 'form.error') {
-    renderErrors(value, elements.input);
+  if (path === 'ui.viewed.currentModal') {
+    renderModal(value, state);
   }
-  if (path === 'ui.modal.current') {
-    renderBtn(value, state);
-  }
-  if (path === 'ui.links.current') {
+  if (path === 'ui.viewed.currentLink') {
     renderPressedLink(value, state);
   }
 });
