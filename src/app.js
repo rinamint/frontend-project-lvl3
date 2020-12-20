@@ -1,7 +1,6 @@
 /* eslint-disable consistent-return */
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
-import _ from 'lodash';
 import axios from 'axios';
 import i18next from 'i18next';
 import { addProxy, updateDataState } from './utils';
