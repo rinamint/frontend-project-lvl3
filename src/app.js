@@ -14,7 +14,7 @@ const validateForm = (feeds, link) => {
   const rssLinkSchema = yup.string().required().url('form.error.url').notOneOf(urls, 'form.error.duplicate');
   try {
     rssLinkSchema.validateSync(link, { abortEarly: false });
-    return '';
+    return null;
   } catch (e) {
     return e.message;
   }
@@ -68,8 +68,8 @@ export default () => {
           watchedState.ui.viewed.viewedPosts.add(id);
           watchedState.ui.viewed.currentModal = id;
         } else if (link) {
-          watchedState.ui.viewed.viewedPosts.add(id);
           watchedState.ui.viewed.currentLink = id;
+          watchedState.ui.viewed.viewedPosts.add(id);
         }
       });
 
@@ -82,7 +82,6 @@ export default () => {
         watchedState.form.error = error;
         if (error) {
           watchedState.form.state = 'failed';
-          watchedState.form.error = error;
           return;
         }
         axios.get(addProxy(link))

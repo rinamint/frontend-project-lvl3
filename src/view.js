@@ -64,17 +64,13 @@ const renderModal = (id, state) => {
   const title = modal.querySelector('.modal-title');
   const body = modal.querySelector('.modal-body');
   const postBody = document.querySelector(`a[data-id="${id}"]`);
-  const link = postBody.getAttribute('href');
-  const postTitle = postBody.textContent;
-  const description = state.data.posts.filter((post) => post.postId === id)
-    .map((post) => post.description);
+  const element = state.data.posts.find((post) => post.postId === id);
   postBody.classList.remove('font-weight-bold');
   postBody.classList.add('font-weight-normal');
-  full.setAttribute('href', `${link}`);
-  title.innerHTML = postTitle;
-  body.innerHTML = description.join('');
+  full.setAttribute('href', element.link);
+  title.innerHTML = element.title;
+  body.innerHTML = element.description;
 };
-
 const renderPressedLink = (id) => {
   const link = document.querySelector(`a[data-id="${id}"]`);
   link.classList.remove('font-weight-bold');
@@ -87,11 +83,11 @@ const renderPosts = (value, state, elements) => {
     title, link, postId,
   }) => {
     const style = state.ui.viewed.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
-    const btn = `<button type='button' data-id=${postId} data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
+    const btn = `<button type='button' data-id='${postId}' data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
      Preview 
      </button>`;
     const li = `<li class="list-group-item d-flex justify-content-between align-items-start">
-    <a href=${link} rel="noopener noreferrer" data-id=${postId} target="_blank" class=${style}> 
+    <a href='${link}' rel="noopener noreferrer" data-id='${postId}' target="_blank" class='${style}'> 
     ${title}
     </a>
     ${btn}
