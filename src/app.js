@@ -3,7 +3,7 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import i18next from 'i18next';
-import { addProxy, updateDataState } from './utils';
+import addProxy from './utils';
 import parse from './parsing';
 import view from './view';
 import resources from './locales';
@@ -22,10 +22,6 @@ const validateForm = (feeds, link) => {
 export default () => {
   const state = {
     form: {
-      input: {
-        state: 'valid',
-        error: null,
-      },
       state: 'filling',
       error: '',
     },
@@ -33,10 +29,11 @@ export default () => {
       posts: [],
       feeds: [],
     },
+    modal: {
+      currentModal: null,
+    },
     ui: {
       viewed: {
-        currentModal: null,
-        currentLink: null,
         viewedPosts: new Set(),
       },
     },
@@ -56,29 +53,31 @@ export default () => {
         posts: document.querySelector('.posts'),
         ulFeeds: document.querySelector('.feed-list'),
         ulPosts: document.querySelector('.post-list'),
+        modal: document.querySelector('#modal'),
+        feedback: document.querySelector('.feedback'),
       };
       const watchedState = view(state, elements);
       update(watchedState);
       elements.posts.addEventListener('click', (e) => {
         const { target } = e;
         const isModal = target.dataset.toggle === 'modal';
-        const link = target.hasAttribute('href');
         const { id } = target.dataset;
+        if (!id) {
+          return;
+        }
+        watchedState.ui.viewed.viewedPosts.add(id);
         if (isModal) {
           watchedState.ui.viewed.viewedPosts.add(id);
-          watchedState.ui.viewed.currentModal = id;
-        } else if (link) {
-          watchedState.ui.viewed.currentLink = id;
-          watchedState.ui.viewed.viewedPosts.add(id);
+          watchedState.modal.currentModal = id;
         }
       });
 
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
+        watchedState.form.state = 'proccessing';
         const link = formData.get('url');
         const error = validateForm(watchedState.data.feeds, link);
-        watchedState.form.state = 'proccesing';
         watchedState.form.error = error;
         if (error) {
           watchedState.form.state = 'failed';
@@ -87,7 +86,9 @@ export default () => {
         axios.get(addProxy(link))
           .then((response) => {
             const data = parse(response.data);
-            updateDataState(data, watchedState, link);
+            const { channel, posts } = data;
+            watchedState.data.posts.unshift(...posts);
+            watchedState.data.feeds.unshift({ ...channel, url: link });
             watchedState.form.state = 'proccessed';
           })
           .catch((err) => {

@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
 import parse from './parsing';
-import { addProxy } from './utils';
+import addProxy from './utils';
 
 const getNewPosts = (state) => {
   const { feeds } = state.data;

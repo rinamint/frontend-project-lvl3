@@ -2,43 +2,42 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
 
-const removeClasses = (element, feedback, value, feedbackValue) => {
-  element.classList.remove(value);
-  if (feedback !== null) {
-    feedback.classList.remove(feedbackValue);
-    feedback.innerHTML = '';
-  }
-};
-
-const buildText = (key, attribute) => {
+const renderFeedback = (key, className, elements) => {
+  const { feedback } = elements;
   const text = i18next.t(key);
-  const div = document.querySelector('.feedback');
-  div.innerHTML = '';
-  div.classList.remove('text-success');
-  div.classList.add(attribute);
-  div.innerHTML = text;
+  feedback.innerText = text;
+  feedback.classList.remove('text-success');
+  feedback.classList.add(className);
 };
 
 const renderForm = (value, error = '', elements) => {
-  const invalidFeedback = document.querySelector('.invalid-feedback');
   switch (value) {
     case 'proccessed':
       elements.button.removeAttribute('disabled');
       elements.input.removeAttribute('disabled');
-      buildText('form.success', 'text-success');
+      renderFeedback('form.success', 'text-success', elements);
       elements.form.reset();
       break;
     case 'failed':
-      buildText(error, 'invalid-feedback');
+      renderFeedback(error, 'invalid-feedback', elements);
       elements.input.classList.add('is-invalid');
       elements.button.removeAttribute('disabled');
       elements.input.removeAttribute('disabled');
       break;
     default:
-      removeClasses(elements.input, invalidFeedback, 'is-invalid', 'invalid-feedback');
+      elements.input.classList.remove('is-invalid');
+      elements.feedback.classList.remove('invalid-feedback');
+      elements.feedback.innerHTML = '';
       elements.button.setAttribute('disabled', '');
       elements.input.setAttribute('disabled', '');
   }
+};
+
+const renderViewedPosts = (value) => {
+  const id = Array.from(value).pop();
+  const postBody = document.querySelector(`a[data-id="${id}"]`);
+  postBody.classList.remove('font-weight-bold');
+  postBody.classList.add('font-weight-normal');
 };
 
 const feedHeading = document.createElement('h2');
@@ -58,43 +57,34 @@ const renderFeeds = (value, elements) => {
   elements.feed.append(elements.ulFeeds);
 };
 
-const renderModal = (id, state) => {
-  const modal = document.querySelector('#modal');
-  const full = modal.querySelector('.full-article');
-  const title = modal.querySelector('.modal-title');
-  const body = modal.querySelector('.modal-body');
-  const postBody = document.querySelector(`a[data-id="${id}"]`);
-  const element = state.data.posts.find((post) => post.postId === id);
-  postBody.classList.remove('font-weight-bold');
-  postBody.classList.add('font-weight-normal');
-  full.setAttribute('href', element.link);
-  title.innerHTML = element.title;
-  body.innerHTML = element.description;
-};
-const renderPressedLink = (id) => {
-  const link = document.querySelector(`a[data-id="${id}"]`);
-  link.classList.remove('font-weight-bold');
-  link.classList.add('font-weight-normal');
+const renderModal = (id, state, elements) => {
+  const full = elements.modal.querySelector('.full-article');
+  const title = elements.modal.querySelector('.modal-title');
+  const body = elements.modal.querySelector('.modal-body');
+  const { posts } = state.data;
+  const currentPost = posts.find((post) => post.postId === id);
+  full.setAttribute('href', currentPost.link);
+  title.innerText = currentPost.title;
+  body.innerText = currentPost.description;
 };
 
-const renderPosts = (value, state, elements) => {
+const renderPosts = (posts, state, elements) => {
   postsHeading.innerText = i18next.t('postHeading');
-  const list = value.map(({
+  const list = posts.map(({
     title, link, postId,
   }) => {
-    const style = state.ui.viewed.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
+    const className = state.ui.viewed.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
     const btn = `<button type='button' data-id='${postId}' data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
      Preview 
      </button>`;
     const li = `<li class="list-group-item d-flex justify-content-between align-items-start">
-    <a href='${link}' rel="noopener noreferrer" data-id='${postId}' target="_blank" class='${style}'> 
+    <a href='${link}' rel="noopener noreferrer" data-id='${postId}' target="_blank" class='${className}'> 
     ${title}
     </a>
     ${btn}
     </li>`;
     return li;
   });
-  elements.ulPosts.innerHTML = '';
   elements.ulPosts.innerHTML = list.join('');
   elements.posts.append(postsHeading);
   elements.posts.append(elements.ulPosts);
@@ -110,11 +100,11 @@ const render = (state, elements) => onChange(state, (path, value) => {
   if (path === 'data.posts') {
     renderPosts(value, state, elements);
   }
-  if (path === 'ui.viewed.currentModal') {
-    renderModal(value, state);
+  if (path === 'modal.currentModal') {
+    renderModal(value, state, elements);
   }
-  if (path === 'ui.viewed.currentLink') {
-    renderPressedLink(value, state);
+  if (path === 'ui.viewed.viewedPosts') {
+    renderViewedPosts(value);
   }
 });
 
