@@ -19,17 +19,21 @@ const renderForm = (value, error = '', elements) => {
       elements.form.reset();
       break;
     case 'failed':
-      renderFeedback(error, 'invalid-feedback', elements);
+      renderFeedback(`form.error.${error}`, 'invalid-feedback', elements);
       elements.input.classList.add('is-invalid');
       elements.button.removeAttribute('disabled');
       elements.input.removeAttribute('disabled');
       break;
-    default:
+    case 'processing':
       elements.input.classList.remove('is-invalid');
       elements.feedback.classList.remove('invalid-feedback');
       elements.feedback.innerHTML = '';
       elements.button.setAttribute('disabled', '');
       elements.input.setAttribute('disabled', '');
+      break;
+    default:
+      elements.button.removeAttribute('disabled');
+      elements.input.removeAttribute('disabled');
   }
 };
 

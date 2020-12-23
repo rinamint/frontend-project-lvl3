@@ -11,7 +11,7 @@ import update from './update';
 
 const validateForm = (feeds, link) => {
   const urls = feeds.map((feed) => feed.url);
-  const rssLinkSchema = yup.string().required().url('form.error.url').notOneOf(urls, 'form.error.duplicate');
+  const rssLinkSchema = yup.string().required().url('url').notOneOf(urls, 'duplicate');
   try {
     rssLinkSchema.validateSync(link, { abortEarly: false });
     return null;
@@ -23,7 +23,7 @@ export default () => {
   const state = {
     form: {
       state: 'filling',
-      error: '',
+      error: null,
     },
     data: {
       posts: [],
@@ -75,7 +75,7 @@ export default () => {
       elements.form.addEventListener('submit', (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
-        watchedState.form.state = 'proccessing';
+        watchedState.form.state = 'processing';
         const link = formData.get('url');
         const error = validateForm(watchedState.data.feeds, link);
         watchedState.form.error = error;
@@ -95,13 +95,13 @@ export default () => {
             const { message } = err;
             switch (message) {
               case 'parsing':
-                watchedState.form.error = 'form.error.parsing';
+                watchedState.form.error = 'parsing';
                 break;
               case 'Network Error':
-                watchedState.form.error = 'form.error.network';
+                watchedState.form.error = 'network';
                 break;
               default:
-                watchedState.form.error = 'form.error.unknown';
+                watchedState.form.error = 'unknown';
             }
             watchedState.form.state = 'failed';
           });
