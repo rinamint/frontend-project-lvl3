@@ -37,8 +37,7 @@ const renderForm = (value, error = '', elements) => {
   }
 };
 
-const renderViewedPosts = (value) => {
-  const id = Array.from(value).pop();
+const renderViewedPosts = (id) => {
   const postBody = document.querySelector(`a[data-id="${id}"]`);
   postBody.classList.remove('font-weight-bold');
   postBody.classList.add('font-weight-normal');
@@ -107,7 +106,7 @@ const render = (state, elements) => onChange(state, (path, value) => {
   if (path === 'modal.currentModal') {
     renderModal(value, state, elements);
   }
-  if (path === 'ui.viewed.viewedPosts') {
+  if (path === 'ui.currentPost') {
     renderViewedPosts(value);
   }
 });

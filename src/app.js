@@ -33,9 +33,8 @@ export default () => {
       currentModal: null,
     },
     ui: {
-      viewed: {
-        viewedPosts: new Set(),
-      },
+      viewedPosts: new Set(),
+      currentPost: null,
     },
   };
 
@@ -65,9 +64,9 @@ export default () => {
         if (!id) {
           return;
         }
-        watchedState.ui.viewed.viewedPosts.add(id);
+        watchedState.ui.viewedPosts.add(id);
+        watchedState.ui.currentPost = id;
         if (isModal) {
-          watchedState.ui.viewed.viewedPosts.add(id);
           watchedState.modal.currentModal = id;
         }
       });
