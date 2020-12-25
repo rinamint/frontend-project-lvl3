@@ -37,10 +37,12 @@ const renderForm = (value, error = '', elements) => {
   }
 };
 
-const renderViewedPosts = (id) => {
-  const postBody = document.querySelector(`a[data-id="${id}"]`);
-  postBody.classList.remove('font-weight-bold');
-  postBody.classList.add('font-weight-normal');
+const renderViewedPosts = (value) => {
+  value.forEach((id) => {
+    const postBody = document.querySelector(`a[data-id="${id}"]`);
+    postBody.classList.remove('font-weight-bold');
+    postBody.classList.add('font-weight-normal');
+  });
 };
 
 const feedHeading = document.createElement('h2');
@@ -76,7 +78,7 @@ const renderPosts = (posts, state, elements) => {
   const list = posts.map(({
     title, link, postId,
   }) => {
-    const className = state.ui.viewed.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
+    const className = state.ui.viewedPosts.has(postId) ? 'font-weight-normal' : 'font-weight-bold';
     const btn = `<button type='button' data-id='${postId}' data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
      Preview 
      </button>`;
@@ -106,7 +108,7 @@ const render = (state, elements) => onChange(state, (path, value) => {
   if (path === 'modal.currentModal') {
     renderModal(value, state, elements);
   }
-  if (path === 'ui.currentPost') {
+  if (path === 'ui.viewedPosts') {
     renderViewedPosts(value);
   }
 });

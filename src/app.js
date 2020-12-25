@@ -34,7 +34,6 @@ export default () => {
     },
     ui: {
       viewedPosts: new Set(),
-      currentPost: null,
     },
   };
 
@@ -64,11 +63,10 @@ export default () => {
         if (!id) {
           return;
         }
-        watchedState.ui.viewedPosts.add(id);
-        watchedState.ui.currentPost = id;
         if (isModal) {
           watchedState.modal.currentModal = id;
         }
+        watchedState.ui.viewedPosts.add(id);
       });
 
       elements.form.addEventListener('submit', (e) => {
