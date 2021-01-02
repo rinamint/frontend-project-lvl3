@@ -13,7 +13,7 @@ const validateForm = (feeds, link) => {
   const urls = feeds.map((feed) => feed.url);
   const rssLinkSchema = yup.string().required().url('url').notOneOf(urls, 'duplicate');
   try {
-    rssLinkSchema.validateSync(link, { abortEarly: false });
+    rssLinkSchema.validateSync(link);
     return null;
   } catch (e) {
     return e.message;
@@ -53,6 +53,9 @@ export default () => {
         ulPosts: document.querySelector('.post-list'),
         modal: document.querySelector('#modal'),
         feedback: document.querySelector('.feedback'),
+        feedHeading: document.createElement('h2'),
+        postsHeading: document.createElement('h2'),
+        postBody: (id) => document.querySelector(`a[data-id="${id}"]`),
       };
       const watchedState = view(state, elements);
       update(watchedState);
@@ -89,16 +92,10 @@ export default () => {
             watchedState.form.state = 'proccessed';
           })
           .catch((err) => {
-            const { message } = err;
-            switch (message) {
-              case 'parsing':
-                watchedState.form.error = 'parsing';
-                break;
-              case 'Network Error':
-                watchedState.form.error = 'network';
-                break;
-              default:
-                watchedState.form.error = 'unknown';
+            if (err.isAxiosError) {
+              watchedState.form.error = 'network';
+            } else if (err.message === 'ParsingError') {
+              watchedState.form.error = 'parsing';
             }
             watchedState.form.state = 'failed';
           });

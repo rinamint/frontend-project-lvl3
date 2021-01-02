@@ -1,5 +1,6 @@
 /* eslint-disable no-param-reassign */
 import axios from 'axios';
+import _ from 'lodash';
 import parse from './parsing';
 import addProxy from './utils';
 
@@ -10,15 +11,9 @@ const getNewPosts = (state) => {
   const promises = feeds.map(({ url, id }) => axios.get(addProxy(url)).then((feedData) => {
     const { posts } = parse(feedData.data);
     const onlyFeedPosts = oldPosts.filter((post) => post.feedId === id);
-    const postsLinks = onlyFeedPosts.map((post) => post.link);
-    const gottenPosts = posts.filter((post) => !postsLinks.includes(post.link));
-    const newPosts = gottenPosts.map((post) => {
-      const newPost = { ...post, feedId: id };
-      return newPost;
-    });
-    if (newPosts.length > 0) {
-      state.data.posts = [...newPosts, ...oldPosts];
-    }
+    const newPosts = _.differenceBy(posts, onlyFeedPosts, 'link')
+      .map((post) => ({ ...post, feedId: id }));
+    state.data.posts.unshift(...newPosts);
   }));
 
   Promise.allSettled(promises).finally(() => setTimeout(() => getNewPosts(state), 15000));

@@ -10,7 +10,7 @@ const renderFeedback = (key, className, elements) => {
   feedback.classList.add(className);
 };
 
-const renderForm = (value, error = '', elements) => {
+const renderForm = (value, elements, error = '') => {
   switch (value) {
     case 'proccessed':
       elements.button.removeAttribute('disabled');
@@ -37,29 +37,29 @@ const renderForm = (value, error = '', elements) => {
   }
 };
 
-const renderViewedPosts = (value) => {
-  value.forEach((id) => {
-    const postBody = document.querySelector(`a[data-id="${id}"]`);
-    postBody.classList.remove('font-weight-bold');
-    postBody.classList.add('font-weight-normal');
+const renderViewedPosts = (set, elements) => {
+  set.forEach((id) => {
+    const post = elements.postBody(id);
+    post.classList.remove('font-weight-bold');
+    post.classList.add('font-weight-normal');
   });
 };
 
-const feedHeading = document.createElement('h2');
-const postsHeading = document.createElement('h2');
-
 const renderFeeds = (value, elements) => {
-  feedHeading.innerText = i18next.t('feedHeading');
+  elements.feedHeading.textContent = i18next.t('feedHeading');
   const feeds = value.map((channel) => {
     const li = document.createElement('li');
+    const heading = document.createElement('h3');
+    heading.innerText = channel.channelName;
+    const description = document.createElement('p');
+    description.innerText = channel.description;
     li.classList.add('list-group-item');
-    li.innerHTML = `<h3>${channel.channelName}</h3><p>${channel.description}</p>`;
+    li.prepend(heading, description);
     return li;
   });
   elements.ulFeeds.innerHTML = '';
   elements.ulFeeds.prepend(...feeds);
-  elements.feed.append(feedHeading);
-  elements.feed.append(elements.ulFeeds);
+  elements.feed.append(elements.feedHeading, elements.ulFeeds);
 };
 
 const renderModal = (id, state, elements) => {
@@ -74,7 +74,7 @@ const renderModal = (id, state, elements) => {
 };
 
 const renderPosts = (posts, state, elements) => {
-  postsHeading.innerText = i18next.t('postHeading');
+  elements.postsHeading.textContent = i18next.t('postHeading');
   const list = posts.map(({
     title, link, postId,
   }) => {
@@ -82,34 +82,47 @@ const renderPosts = (posts, state, elements) => {
     const btn = `<button type='button' data-id='${postId}' data-toggle='modal' data-target='#modal' class='btn btn-primary btn-sm'>
      Preview 
      </button>`;
-    const li = `<li class="list-group-item d-flex justify-content-between align-items-start">
-    <a href='${link}' rel="noopener noreferrer" data-id='${postId}' target="_blank" class='${className}'> 
-    ${title}
-    </a>
-    ${btn}
-    </li>`;
+    const li = document.createElement('li');
+    li.classList.add('list-group-item');
+    li.classList.add('d-flex');
+    li.classList.add('justify-content-between');
+    li.classList.add('align-items-start');
+    const postBody = document.createElement('a');
+    postBody.setAttribute('href', `${link}`);
+    postBody.setAttribute('rel', 'noopener noreferrer');
+    postBody.setAttribute('data-id', `${postId}`);
+    postBody.setAttribute('target', '_blank');
+    postBody.classList.add(className);
+    postBody.innerText = `${title}`;
+    li.innerHTML = btn;
+    li.prepend(postBody);
+
     return li;
   });
-  elements.ulPosts.innerHTML = list.join('');
-  elements.posts.append(postsHeading);
-  elements.posts.append(elements.ulPosts);
+  elements.ulPosts.innerHTML = '';
+  elements.ulPosts.prepend(...list);
+  elements.posts.append(elements.postsHeading, elements.ulPosts);
 };
 
 const render = (state, elements) => onChange(state, (path, value) => {
-  if (path === 'form.state') {
-    renderForm(value, state.form.error, elements);
-  }
-  if (path === 'data.feeds') {
-    renderFeeds(value, elements);
-  }
-  if (path === 'data.posts') {
-    renderPosts(value, state, elements);
-  }
-  if (path === 'modal.currentModal') {
-    renderModal(value, state, elements);
-  }
-  if (path === 'ui.viewedPosts') {
-    renderViewedPosts(value);
+  switch (path) {
+    case 'form.state':
+      renderForm(value, elements, state.form.error);
+      break;
+    case 'data.feeds':
+      renderFeeds(value, elements);
+      break;
+    case 'data.posts':
+      renderPosts(value, state, elements);
+      break;
+    case 'modal.currentModal':
+      renderModal(value, state, elements);
+      break;
+    case 'ui.viewedPosts':
+      renderViewedPosts(value, elements);
+      break;
+    default:
+      break;
   }
 });
 
