@@ -3,5 +3,3 @@ import app from './app';
 import 'bootstrap';
 
 app();
-
-export default () => document.querySelector('.main');
