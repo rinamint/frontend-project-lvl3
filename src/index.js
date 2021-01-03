@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import app from './app';
 import 'bootstrap';
 
-app();
+const init = () => app();
+init();
 
-export default app;
+export default init;
