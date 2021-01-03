@@ -1,4 +1,3 @@
-/* eslint-disable consistent-return */
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
 import axios from 'axios';
