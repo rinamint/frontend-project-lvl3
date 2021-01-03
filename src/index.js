@@ -3,3 +3,5 @@ import app from './app';
 import 'bootstrap';
 
 app();
+
+export default app;
