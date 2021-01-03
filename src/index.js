@@ -4,4 +4,4 @@ import 'bootstrap';
 
 app();
 
-export default app;
+export default () => document.querySelector('#container');
