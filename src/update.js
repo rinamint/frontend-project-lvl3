@@ -16,7 +16,7 @@ const getNewPosts = (state) => {
     state.data.posts.unshift(...newPosts);
   }));
 
-  Promise.allSettled(promises).finally(() => setTimeout(() => getNewPosts(state), 15000));
+  Promise.allSettled(promises).finally(() => setTimeout(() => getNewPosts(state), 5000));
 };
 
 export default getNewPosts;
