@@ -8,4 +8,4 @@
 This app allows user to view content from specified sources (RSS feeds). New posts are automatically updated each 5 seconds and are displayed on top. 
 
 
-[see how it works](https://rss-agregator-delta.vercel.app "demonstration").
+[see how it works](https://rss-agregator.rinamint.vercel.app "demonstration").
