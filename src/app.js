@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import * as yup from 'yup';
 import axios from 'axios';
+import _ from 'lodash';
 import i18next from 'i18next';
 import addProxy from './utils';
 import parse from './parsing';
@@ -86,8 +87,10 @@ export default () => {
           .then((response) => {
             const data = parse(response.data);
             const { channel, posts } = data;
-            watchedState.data.posts.unshift(...posts);
-            watchedState.data.feeds.unshift({ ...channel, url: link });
+            const feedId = _.uniqueId();
+            const idPost = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
+            watchedState.data.posts.unshift(...idPost);
+            watchedState.data.feeds.unshift({ ...channel, url: link, id: feedId });
             watchedState.form.state = 'proccessed';
           })
           .catch((err) => {
