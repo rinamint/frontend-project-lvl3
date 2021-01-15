@@ -10,10 +10,9 @@ const getNewPosts = (state) => {
   const oldPosts = state.data.posts;
   const promises = feeds.map(({ url, id }) => axios.get(addProxy(url)).then((feedData) => {
     const { posts } = parse(feedData.data);
-    const idPost = posts.map((post) => ({ ...post, postId: _.uniqueId() }));
     const onlyFeedPosts = oldPosts.filter((post) => post.feedId === id);
-    const newPosts = _.differenceBy(idPost, onlyFeedPosts, 'link')
-      .map((post) => ({ ...post, feedId: id }));
+    const newPosts = _.differenceBy(posts, onlyFeedPosts, 'link')
+      .map((post) => ({ ...post, feedId: id, postId: _.uniqueId() }));
     state.data.posts.unshift(...newPosts);
   }));
 
